@@ -16,6 +16,7 @@
     printf("DEBUG %s:%d: ", __FILE__, __LINE__); \
     printf(__VA_ARGS__);                         \
     printf("\n");                                \
+    fflush(stdout);\
   }
 #define probe(v, s) {                                     \
     printf("PROBE %s:%d: %s = ", __FILE__, __LINE__, #v); \

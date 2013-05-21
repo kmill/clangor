@@ -1,6 +1,7 @@
 /* Copyright 2013 Kyle Miller
  * blocks.h
- * Definition of memory management structures
+ *
+ * Definitions of memory management structures
  */
 
 #ifndef clangor_blocks_h
@@ -26,7 +27,7 @@
 // A mask to get the block of a pointer
 #define BLOCK_MASK (~(BLOCK_SIZE-1))
 // The effective size of a blockinfo (which is a power of two for bit convenience)
-#define BLOCKINFO_SIZE (sizeof(struct Blockinfo_aligned_s *))
+#define BLOCKINFO_SIZE (sizeof(struct Blockinfo_aligned_s))
 // The number of blocks which are useable in a megablock, since the
 // beginning of a megablock is used by the blockinfos
 #define NUM_USABLE_BLOCKS ((word)(MEGABLOCK_SIZE / (BLOCK_SIZE + BLOCKINFO_SIZE)))
@@ -96,8 +97,8 @@ typedef struct Block_s {
   uint8_t data[BLOCK_SIZE];
 } Block_t;
 
-// A megablock.  Interestingly, the blockinfo[i] is the blockinfo for
-// blocks[i] so long as i >= FIRST_USABLE_BLOCK
+// A megablock.  Set up so that blockinfo[i] is the blockinfo for
+// blocks[i] (so long as FIRST_USABLE_BLOCK <= i < NUM_BLOCKS)
 typedef union {
   struct Blockinfo_aligned_s blockinfos[NUM_BLOCKS];
   Block_t blocks[NUM_BLOCKS];
@@ -108,16 +109,16 @@ typedef union {
 
 void init_free_lists(void);
 
-Blockinfo_t *gc_alloc_group(word blocks);
+Blockinfo_t *alloc_group(word blocks);
 
-void gc_free_group(Blockinfo_t *blockinfo);
+void free_group(Blockinfo_t *blockinfo);
 
 
 // Useful inline functions
 
 // Get a blockinfo for a block which contains the given pointer
 inline
-Blockinfo_t *gc_get_blockinfo(void *ptr) {
+Blockinfo_t *get_blockinfo(void *ptr) {
   word block = (word)ptr & BLOCK_MASK;
   Megablock_t *megablock = (Megablock_t *)TO_MEGABLOCK(block);
   word blockinfo_num = (~MEGABLOCK_MASK & block) >> BLOCK_SIZE_LG;
@@ -128,9 +129,10 @@ Blockinfo_t *gc_get_blockinfo(void *ptr) {
 
 // Debug
 
-void gc_verify_free_megablock_list(void);
-void gc_verify_free_block_list(void);
-void gc_print_free_megablock_list(void);
-void gc_print_free_block_list(void);
+void verify_free_megablock_list(void);
+void verify_free_block_list(void);
+void debug_print_free_megablock_list(void);
+void debug_print_free_block_list(void);
+void assert_free_block_list_empty(void);
 
 #endif

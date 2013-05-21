@@ -13,12 +13,27 @@ all: clangor
 #clangor: build/clangor.o
 #	$(CC) $(ARCH) $(LIBS) $^ -o $@
 
+gc: build/gc
+
 build/gc: build/gc.o build/blocks.o
 	$(CC) $(ARCH) $(LIBS) $^ -o $@
 
 build/%.o: src/%.c
 	mkdir -p $(dir $@)
 	$(CC) $(ARCH) $(CFLAGS) -c $< -o $@
+
+build/tests/%.c: src/tests/test_%.c
+	mkdir -p $(dir $@)
+	./src/tests/make_test.sh $< $@
+
+build/tests/%.o: build/tests/%.c
+	$(CC) $(ARCH) $(CFLAGS) -c $< -o $@
+
+build/tests/blocks: build/tests/blocks.o build/blocks.o
+	$(CC) $(ARCH) $(CFLAGS) $^ -o $@
+
+test: build/tests/blocks
+	sh $^.sh $^
 
 clean:
 	-rm -rf ./build/*
