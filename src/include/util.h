@@ -42,7 +42,7 @@
     exit(22);                                             \
   }
 
-// next power of two
+// Next power of two.  This should only be used in the pre-processor!
 #define _npo2_b2(x) ((x) | ((x) >> 1))
 #define _npo2_b4(x) (_npo2_b2(x) | (_npo2_b2(x) >> 2))
 #define _npo2_b8(x) (_npo2_b4(x) | (_npo2_b4(x) >> 4))

@@ -6,12 +6,6 @@
 #ifndef clangor_gc_h
 #define clangor_gc_h
 
-#ifndef MAP_ANONYMOUS
-# define GC_MMAP_MAPPING MAP_ANON
-#else
-# define GC_MMAP_MAPPING MAP_ANONYMOUS
-#endif
-
 // Object definitions
 
 typedef struct DataDef_s {
