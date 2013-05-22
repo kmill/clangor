@@ -63,7 +63,7 @@ int main(int argc, char *argv[]) {
   if (argc < 2) {
 PRINT_USAGE:
     fprintf(stderr, "Usage: %s [--out] tester\n", argv[0]);
-    fprintf(stderr, "       %s --list\n");
+    fprintf(stderr, "       %s --list\n", argv[0]);
     fprintf(stderr, "Available testers:\n");
     __list_testers(stderr, 1);
     exit(1);
