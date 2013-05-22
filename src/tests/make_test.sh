@@ -115,6 +115,5 @@ $torun
 
 echo
 echo "# All tests passed in \$testprog"
-echo
 
 EOF

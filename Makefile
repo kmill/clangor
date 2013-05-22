@@ -37,7 +37,9 @@ build/tests/test_blocks: build/tests/test_blocks.o build/target/blocks.o
 	$(CC) $(ARCH) $(CFLAGS) $^ -o $@
 
 test: build/tests/test_blocks
-	sh $^.sh $^
+	$(foreach t,$^,sh $(t).sh $(t) &&) true
+	@echo
+	@echo "# All tests passed."
 
 clean:
 	-rm -rf ./build/*
