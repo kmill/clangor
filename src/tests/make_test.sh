@@ -25,8 +25,6 @@ cat >> $outfile <<EOF
 #define SUCCEEDS 0
 #define FAILS 1
 
-typedef void (*Tester)(void);
-
 Tester testers[] = {$testers NULL};
 char *testersq[] = {$testersq NULL};
 int expectations[] = {$expectations 0};

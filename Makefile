@@ -4,11 +4,16 @@ LIBS=-lfftw3 -ljack -lm
 INCLUDES=-I /Library/Frameworks/Jackmp.framework/Versions/Current/Headers/ -I ./src/include
 CFLAGS=-ggdb $(INCLUDES) -std=gnu99 -O0 -DDEBUG
 
-OBJS=$(patsubst src/%.c,build/%.o,$(wildcard src/*.c))
-
 .PHONY: test clean
 
-aoeu: $(OBJS)
+# compile source.c dest.o
+define compile
+	$(CC) $(ARCH) $(CFLAGS) -c $(1) -o $(2)
+endef
+# link sources dest
+define link
+	$(CC) $(ARCH) $(LIBS) $(1) -o $(2)
+endef
 
 all: clangor
 
@@ -18,11 +23,11 @@ all: clangor
 gc: build/target/gc
 
 build/target/gc: build/target/gc.o build/target/blocks.o
-	$(CC) $(ARCH) $(LIBS) $^ -o $@
+	$(call link, $^, $@)
 
 build/target/%.o: src/%.c
 	mkdir -p $(dir $@)
-	$(CC) $(ARCH) $(CFLAGS) -c $< -o $@
+	$(call compile, $<, $@)
 
 .PRECIOUS: build/tests/%.c
 
@@ -32,10 +37,10 @@ build/tests/%.c: src/tests/%.c
 	chmod +x $(patsubst %.c, %.sh, $@)
 
 build/tests/%.o: build/tests/%.c
-	$(CC) $(ARCH) $(CFLAGS) -c $< -o $@
+	$(call compile, $<, $@)
 
 build/tests/test_blocks: build/tests/test_blocks.o build/target/blocks.o
-	$(CC) $(ARCH) $(CFLAGS) $^ -o $@
+	$(call link, $^, $@)
 
 test: build/tests/test_blocks
 	$(foreach t, $^, ./$(t).sh $(t) &&) true

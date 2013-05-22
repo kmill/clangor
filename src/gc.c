@@ -50,8 +50,8 @@ int main() {
   //  probe(FIRST_BLOCKINFO(b[0]), "%p");
   //  free_group(b[1]);
   //  free_group(b[0]);
-  print_free_block_list();
-  print_free_megablock_list();
+  debug_print_free_block_list();
+  debug_print_free_megablock_list();
   
 /*   void* mem = alloc_megablocks(1); */
 /*   for (int i = 0; i < 1*MEGABLOCK_SIZE; i++) { */
