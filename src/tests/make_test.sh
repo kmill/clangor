@@ -77,7 +77,7 @@ function SUCCEEDS() {
   /bin/echo -n "* [......] \$1"
   output=\$(\$testprog \$1 2>&1)
   if [ \$? -ne 0 ]; then
-    echo "\r* [FAILED"
+    echo -e "\r* [FAILED"
     if [ -z "\$output" ]; then
       echo "  (no output)"
     else
@@ -86,7 +86,7 @@ function SUCCEEDS() {
     echo "!!! Should have succeeded. !!!"
     exit 1
   else
-    echo "\r* [Passed"
+    echo -e "\r* [Passed"
     if [ "\$VERBOSE" -a "\$output" ] ; then
       echo "\$output"
     fi
@@ -96,7 +96,7 @@ function FAILS() {
   /bin/echo -n "* [......] \$1"
   output=\$(\$testprog \$1 2>&1)
   if [ \$? -eq 0 ]; then
-    echo "\r* [FAILED"
+    echo -e "\r* [FAILED"
     if [ -z "\$output" ]; then
       echo "  (no output)"
     else
@@ -105,7 +105,7 @@ function FAILS() {
     echo "!!! Should have failed. !!!"
     exit 1
   else
-    echo "\r* [Passed"
+    echo -e "\r* [Passed"
     if [ "\$VERBOSE" -a "\$output" ] ; then
       echo "\$output"
     fi

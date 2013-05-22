@@ -29,6 +29,7 @@ build/target/%.o: src/%.c
 build/tests/%.c: src/tests/%.c
 	mkdir -p $(dir $@)
 	./src/tests/make_test.sh $< $@
+	chmod +x $(patsubst %.c, %.sh, $@)
 
 build/tests/%.o: build/tests/%.c
 	$(CC) $(ARCH) $(CFLAGS) -c $< -o $@
@@ -37,7 +38,7 @@ build/tests/test_blocks: build/tests/test_blocks.o build/target/blocks.o
 	$(CC) $(ARCH) $(CFLAGS) $^ -o $@
 
 test: build/tests/test_blocks
-	$(foreach t,$^,sh $(t).sh $(t) &&) true
+	$(foreach t, $^, ./$(t).sh $(t) &&) true
 	@echo
 	@echo "# All tests passed."
 
