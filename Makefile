@@ -8,7 +8,7 @@ CFLAGS=-ggdb $(INCLUDES) -std=gnu99 -O0 -DDEBUG
 
 # compile source.c dest.o
 define compile
-	$(CC) $(ARCH) $(CFLAGS) -c $(1) -o $(2)
+	$(CC) $(ARCH) $(CFLAGS) $(3) -c $(1) -o $(2)
 endef
 # link sources dest
 define link
@@ -31,21 +31,26 @@ build/target/%.o: src/%.c
 
 .PRECIOUS: build/tests/%.c
 
-build/tests/%.c: src/tests/%.c
+build/tests/%.c: src/tests/%.c src/tests/make_test.sh
 	mkdir -p $(dir $@)
 	./src/tests/make_test.sh $< $@
-	chmod +x $(patsubst %.c, %.sh, $@)
+#	chmod +x $(patsubst %.c, %.sh, $@)
 
 build/tests/%.o: build/tests/%.c
-	$(call compile, $<, $@)
+	$(call compile, $<, $@, -I .)
+
+TEST_MODULES=build/tests/test_blocks
 
 build/tests/test_blocks: build/tests/test_blocks.o build/target/blocks.o
 	$(call link, $^, $@)
 
-test: build/tests/test_blocks
-	$(foreach t, $^, ./$(t).sh $(t) &&) true
-	@echo
-	@echo "# All tests passed."
+build/tests/run_tests.sh: src/tests/run_tests.sh
+	mkdir -p $(dir $@)
+	cp $< $@
+	chmod +x $@
+
+test: build/tests/run_tests.sh $(TEST_MODULES)
+	./$< $(TEST_MODULES)
 
 clean:
 	-rm -rf ./build/*

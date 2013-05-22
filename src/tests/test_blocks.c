@@ -5,6 +5,8 @@
 
 #include "test.h"
 #include "blocks.h"
+#include "util.h"
+#include <stdint.h>
 
 // Some sanity checks on the constants related to block sizes.
 void TEST_SUCCEEDS test_constants(void) {
@@ -100,6 +102,7 @@ void TEST_SUCCEEDS test_big_allocation_deallocation(void) {
   for (int i = 1; i < 101; i++) {
     int j = 1 + 3*(i-1) % 100;
     b[j] = alloc_group(j);
+    assert(b[j]->blocks == j, "Group not the right size.");
     verify_free_block_list();
     verify_free_megablock_list();
   }
@@ -112,3 +115,53 @@ void TEST_SUCCEEDS test_big_allocation_deallocation(void) {
   assert_free_block_list_empty();
 }
 
+// Can we write to a block which is given to us?
+void TEST_SUCCEEDS test_writing_to_block(void) {
+  Blockinfo_t *b = alloc_group(5);
+  assert(b->blocks == 5, "Block not the right size.");
+  for (word i = 0; i < BLOCK_SIZE * b->blocks; i++) {
+    *((uint8_t *)b->start + i) = 22;
+  }
+  for (word i = 0; i < BLOCK_SIZE * b->blocks; i++) {
+    assert(*((uint8_t *)b->start + i) == 22, "Didn't set the memory.");
+  }
+  // in case we wrote over something
+  verify_free_block_list();
+  verify_free_megablock_list();
+  free_group(b);
+  verify_free_block_list();
+  verify_free_megablock_list();
+}
+
+// Ruin data for blockinfo right before freeing
+void TEST_FAILS test_writing_junk_into_blockinfo1(void) {
+  Blockinfo_t *b = alloc_group(1);
+  for (word i = 0; i < BLOCKINFO_SIZE; i++) {
+    *((uint8_t *)b + i) = 22;
+  }
+  free_group(b);
+}
+
+// Ruin data for blockinfo right before freeing
+void TEST_FAILS test_writing_junk_into_blockinfo2(void) {
+  // First we need the allocator to allocate a megablock
+  Blockinfo_t *b = alloc_group(1);
+  free_group(b);
+  uint8_t *mb = (void *)TO_MEGABLOCK(b);
+  for (word i = 0; i < NUM_BLOCKS*BLOCKINFO_SIZE; i++) {
+    *(mb + i) = 22;
+  }
+  alloc_group(1);
+}
+
+// Ruin data for free megablock, try verify_free_megablock_list
+void TEST_FAILS test_writing_junk_into_blockinfo3(void) {
+  // First we need the allocator to allocate a megablock
+  Blockinfo_t *b = alloc_group(1);
+  free_group(b);
+  uint8_t *mb = (void *)TO_MEGABLOCK(b);
+  for (word i = 0; i < NUM_BLOCKS*BLOCKINFO_SIZE; i++) {
+    *(mb + i) = 22;
+  }
+  verify_free_megablock_list();
+}

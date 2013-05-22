@@ -3,20 +3,21 @@
 # Copyright 2013 Kyle Miller
 # make_test.sh
 #
-# Transforms a test.h-annotated program into a binary and shell script
-# which automate the testing.
+# Transforms a test.h-annotated program into a binary which is
+# compatible with run_test.sh.
 
 infile=$1
 outfile=$2
 
-testersq=`sed -e '/TEST_\(SUCCEEDS\|FAILS\)/!d;s/^.*TEST_\([^ ]*\)  *\([^( ]*\).*/"\2", /' $infile`
+# names of tester functions, comma delimited (with trailing comma)
 testers=`sed -e '/TEST_\(SUCCEEDS\|FAILS\)/!d;s/^.*TEST_\([^ ]*\)  *\([^( ]*\).*/\2, /' $infile`
+# the previous, but with the function names in quotes
+testersq=`sed -e '/TEST_\(SUCCEEDS\|FAILS\)/!d;s/^.*TEST_\([^ ]*\)  *\([^( ]*\).*/"\2", /' $infile`
+# SUCCEEDS or FAILS for each, comma delimited (with trailing comma)
 expectations=`sed -e '/TEST_\(SUCCEEDS\|FAILS\)/!d;s/^.*TEST_\([^ ]*\)  *\([^( ]*\).*/\1, /' $infile`
-torun=`sed -e '/TEST_\(SUCCEEDS\|FAILS\)/!d;s/^.*TEST_\([^ ]*\)  *\([^( ]*\).*/\1 \2/' $infile`
 
-cat $infile > $outfile
-
-cat >> $outfile <<EOF
+cat > $outfile <<EOF
+#include "$infile"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -31,18 +32,29 @@ int expectations[] = {$expectations 0};
 
 char *expectstring[] = {"succeeds", "fails"};
 
+void __list_testers(FILE *out, int fancy) {
+  char** tester;
+  int* expectation;
+  for (tester = testersq, expectation = expectations; *tester != NULL; tester++, expectation++) {
+    if (fancy) {
+      fprintf(out, " %s (%s)\n", *tester, expectstring[*expectation]);
+    } else {
+      fprintf(out, "%s %s\n", expectstring[*expectation], *tester);
+    }
+  }
+}
+
 int main(int argc, char *argv[]) {
-  
   if (argc < 2) {
 PRINT_USAGE:
     fprintf(stderr, "Usage: %s tester\n", argv[0]);
     fprintf(stderr, "Available testers:\n");
-    char** tester;
-    int* expectation;
-    for (tester = testersq, expectation = expectations; *tester != NULL; tester++, expectation++) {
-      fprintf(stderr, " %s (%s)\n", *tester, expectstring[*expectation]);
-    }
+    __list_testers(stderr, 1);
     exit(1);
+  }
+  if (strcmp(argv[1], "--list") == 0) {
+    __list_testers(stdout, 0);
+    exit(0);
   }
   
   for (int i = 0; testers[i] != NULL; i++) {
@@ -54,64 +66,4 @@ PRINT_USAGE:
   fprintf(stderr, "Unknown tester '%s'.\n", argv[1]);
   goto PRINT_USAGE;
 }
-EOF
-
-outfile_sh=${outfile%.c}.sh
-
-echo $outfile_sh
-
-cat > $outfile_sh <<EOF
-#!/bin/bash
-testprog=\$1
-
-echo
-echo "Running all tests in \$testprog"
-echo
-
-NUMTRIED=0
-NUMFAILED=0
-
-function SUCCEEDS() {
-  /bin/echo -n "* [......] \$1"
-  output=\$(\$testprog \$1 2>&1)
-  if [ \$? -ne 0 ]; then
-    echo -e "\r* [FAILED"
-    if [ -z "\$output" ]; then
-      echo "  (no output)"
-    else
-      echo "\$output"
-    fi
-    echo "!!! Should have succeeded. !!!"
-    exit 1
-  else
-    echo -e "\r* [Passed"
-    if [ "\$VERBOSE" -a "\$output" ] ; then
-      echo "\$output"
-    fi
-  fi
-}
-function FAILS() {
-  /bin/echo -n "* [......] \$1"
-  output=\$(\$testprog \$1 2>&1)
-  if [ \$? -eq 0 ]; then
-    echo -e "\r* [FAILED"
-    if [ -z "\$output" ]; then
-      echo "  (no output)"
-    else
-      echo "\$output"
-    fi
-    echo "!!! Should have failed. !!!"
-    exit 1
-  else
-    echo -e "\r* [Passed"
-    if [ "\$VERBOSE" -a "\$output" ] ; then
-      echo "\$output"
-    fi
-  fi
-}
-$torun
-
-echo
-echo "# All tests passed in \$testprog"
-
 EOF

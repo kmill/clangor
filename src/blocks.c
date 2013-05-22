@@ -1,6 +1,11 @@
 /* Copyright 2013 Kyle Miller
  * blocks.c
- * Functions for allocating/freeing blocks (basically an alternative to malloc).
+ *
+ * Functions for allocating/freeing blocks (basically an alternative
+ * to malloc).
+ *
+ * This implementation follows GHC's block-structured heap fairly
+ * closely.
  */
 
 #include <sys/mman.h>
