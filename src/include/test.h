@@ -14,6 +14,13 @@
 // The script make_test.sh looks for these TEST_* markers and creates
 // a program which can evaluate the tests using a command-line
 // argument.
+//
+// An expected output to stdout may be given by giving comments like
+// //> Expected output
+// before a test definition.  Be careful! All such lines between tests
+// are concatenated!
+//
+// See test_test.c for examples.
 
 #ifndef DEBUG
 # define DEBUG

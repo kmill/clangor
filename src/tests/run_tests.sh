@@ -28,9 +28,18 @@ function succeeds() {
     echo "!!! Should have succeeded. !!!"
     exit 1
   else
-    echo -e "\r* [Passed"
-    if [ "$VERBOSE" -a "$output" ] ; then
-      echo "$output"
+    expectedoutput=$($testprog --out $@ 2>&1)
+    if [ -n "$expectedoutput"  -a  $? -eq 0  -a  "$output" != "$expectedoutput" ]; then
+        echo -e "\r* [FAILED"
+        diffed=`diff <(echo "$expectedoutput") <(echo "$output")`
+        echo "$diffed"
+        echo "!!! Output does not match expected output !!!"
+        exit 1
+    else
+        echo -e "\r* [Passed"
+        if [ "$VERBOSE" -a "$output" ] ; then
+            echo "$output"
+        fi
     fi
   fi
 }

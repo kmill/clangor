@@ -5,6 +5,8 @@
 #
 # Transforms a test.h-annotated program into a binary which is
 # compatible with run_test.sh.
+#
+# Expected output is designated by "//> " comments before a function.
 
 infile=$1
 outfile=$2
@@ -16,6 +18,9 @@ testersq=`sed -e '/TEST_\(SUCCEEDS\|FAILS\)/!d;s/^.*TEST_\([^ ]*\)  *\([^( ]*\).
 # SUCCEEDS or FAILS for each, comma delimited (with trailing comma)
 expectations=`sed -e '/TEST_\(SUCCEEDS\|FAILS\)/!d;s/^.*TEST_\([^ ]*\)  *\([^( ]*\).*/\1, /' $infile`
 
+# matching output
+expectedoutput=`sed -e '/^\/\/> \|TEST_\(SUCCEEDS\|FAILS\)/!d;s/^[^\/]*TEST_\([^ ]*\)  *\([^( ]*\).*/"", /;s/^\/\/> \(.*\)/"\1\\\\n"/' $infile`
+
 cat > $outfile <<EOF
 #include "$infile"
 
@@ -26,28 +31,39 @@ cat > $outfile <<EOF
 #define SUCCEEDS 0
 #define FAILS 1
 
-Tester testers[] = {$testers NULL};
-char *testersq[] = {$testersq NULL};
-int expectations[] = {$expectations 0};
+Tester __testers[] = {$testers NULL};
+char *__testersq[] = {$testersq NULL};
+int __expectations[] = {$expectations 0};
+char *__expectoutstrings[] = {$expectedoutput NULL};
 
-char *expectstring[] = {"succeeds", "fails"};
+char *__expectstring[] = {"succeeds", "fails"};
 
 void __list_testers(FILE *out, int fancy) {
   char** tester;
   int* expectation;
-  for (tester = testersq, expectation = expectations; *tester != NULL; tester++, expectation++) {
+  for (tester = __testersq, expectation = __expectations; *tester != NULL; tester++, expectation++) {
     if (fancy) {
-      fprintf(out, " %s (%s)\n", *tester, expectstring[*expectation]);
+      fprintf(out, " %s (%s)\n", *tester, __expectstring[*expectation]);
     } else {
-      fprintf(out, "%s %s\n", expectstring[*expectation], *tester);
+      fprintf(out, "%s %s\n", __expectstring[*expectation], *tester);
     }
   }
+}
+
+int __from_name(char *name) {
+  for (int i = 0; __testers[i] != NULL; i++) {
+    if (strcmp(__testersq[i], name) == 0) {
+      return i;
+    }
+  }
+  return -1;
 }
 
 int main(int argc, char *argv[]) {
   if (argc < 2) {
 PRINT_USAGE:
-    fprintf(stderr, "Usage: %s tester\n", argv[0]);
+    fprintf(stderr, "Usage: %s [--out] tester\n", argv[0]);
+    fprintf(stderr, "       %s --list\n");
     fprintf(stderr, "Available testers:\n");
     __list_testers(stderr, 1);
     exit(1);
@@ -56,14 +72,25 @@ PRINT_USAGE:
     __list_testers(stdout, 0);
     exit(0);
   }
-  
-  for (int i = 0; testers[i] != NULL; i++) {
-    if (strcmp(testersq[i], argv[1]) == 0) {
-      testers[i]();
-      return 0;
+  if (strcmp(argv[1], "--out") == 0) {
+    if (argc < 3) {
+      goto PRINT_USAGE;
     }
+    int i = __from_name(argv[2]);
+    if (i == -1) {
+      fprintf(stderr, "Unknown tester '%s'.\n", argv[2]);
+      goto PRINT_USAGE;
+    }
+    printf(__expectoutstrings[i]);
+    exit(0);
   }
-  fprintf(stderr, "Unknown tester '%s'.\n", argv[1]);
-  goto PRINT_USAGE;
+
+  int i = __from_name(argv[1]);
+  if (i == -1) {
+    fprintf(stderr, "Unknown tester '%s'.\n", argv[1]);
+    goto PRINT_USAGE;
+  }
+  __testers[i]();
+  return 0;
 }
 EOF
