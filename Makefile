@@ -6,6 +6,8 @@ CFLAGS=-ggdb $(INCLUDES) -std=gnu99 -O0 -DDEBUG
 
 OBJS=$(patsubst src/%.c,build/%.o,$(wildcard src/*.c))
 
+.PHONY: test clean
+
 aoeu: $(OBJS)
 
 all: clangor
@@ -13,26 +15,28 @@ all: clangor
 #clangor: build/clangor.o
 #	$(CC) $(ARCH) $(LIBS) $^ -o $@
 
-gc: build/gc
+gc: build/target/gc
 
-build/gc: build/gc.o build/blocks.o
+build/target/gc: build/target/gc.o build/target/blocks.o
 	$(CC) $(ARCH) $(LIBS) $^ -o $@
 
-build/%.o: src/%.c
+build/target/%.o: src/%.c
 	mkdir -p $(dir $@)
 	$(CC) $(ARCH) $(CFLAGS) -c $< -o $@
 
-build/tests/%.c: src/tests/test_%.c
+.PRECIOUS: build/tests/%.c
+
+build/tests/%.c: src/tests/%.c
 	mkdir -p $(dir $@)
 	./src/tests/make_test.sh $< $@
 
 build/tests/%.o: build/tests/%.c
 	$(CC) $(ARCH) $(CFLAGS) -c $< -o $@
 
-build/tests/blocks: build/tests/blocks.o build/blocks.o
+build/tests/test_blocks: build/tests/test_blocks.o build/target/blocks.o
 	$(CC) $(ARCH) $(CFLAGS) $^ -o $@
 
-test: build/tests/blocks
+test: build/tests/test_blocks
 	sh $^.sh $^
 
 clean:

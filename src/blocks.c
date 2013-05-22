@@ -384,7 +384,7 @@ void verify_free_block_list(void) {
   } 
 }
 
-void print_free_megablock_list(void) {
+void debug_print_free_megablock_list(void) {
   printf("free_megablock_list:\n");
   for (Blockinfo_t *curr = free_megablock_list; curr != NULL; curr = curr->link) {
     printf("  Megablock %p: megablocks=%d (blocks=%d)\n",
@@ -395,7 +395,7 @@ void print_free_megablock_list(void) {
   printf("  (end free_megablock_list)\n");
 }
 
-void print_free_block_list(void) {
+void debug_print_free_block_list(void) {
   printf("free lists ...\n");
   for (int i = 0; i < FREE_LIST_SIZE; i++) {
     if (free_block_list[i] == NULL) {

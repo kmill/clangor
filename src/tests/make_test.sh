@@ -85,8 +85,12 @@ function SUCCEEDS() {
     fi
     echo "!!! Should have succeeded. !!!"
     exit 1
+  else
+    echo "\r* [Passed"
+    if [ "\$VERBOSE" -a "\$output" ] ; then
+      echo "\$output"
+    fi
   fi
-  echo "\r* [Passed"
 }
 function FAILS() {
   /bin/echo -n "* [......] \$1"
@@ -100,8 +104,12 @@ function FAILS() {
     fi
     echo "!!! Should have failed. !!!"
     exit 1
+  else
+    echo "\r* [Passed"
+    if [ "\$VERBOSE" -a "\$output" ] ; then
+      echo "\$output"
+    fi
   fi
-  echo "\r* [Passed"
 }
 $torun
 

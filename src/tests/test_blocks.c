@@ -20,6 +20,8 @@ void TEST_SUCCEEDS test_constants(void) {
          "Blockinfos ovelap with blocks.");
 }
 
+// Tests various orders of allocation and deallocation of two block
+// groups which make up a megablock.  Some of this is redundant.
 void TEST_SUCCEEDS test_allocation_deallocation(void) {
   Blockinfo_t *b1, *b2;
   init_free_lists();
@@ -33,14 +35,12 @@ void TEST_SUCCEEDS test_allocation_deallocation(void) {
   verify_free_block_list();
   verify_free_megablock_list();
   assert_free_block_list_empty();
-  print_free_block_list();
-  print_free_megablock_list();
-  debug("test allocating one block with a megablock in the megablock free list");
-  b1 = alloc_group(1);
+  debug("test allocating group with a megablock in the megablock free list");
+  b1 = alloc_group(NUM_USABLE_BLOCKS - 1);
   verify_free_block_list();
   verify_free_megablock_list();
   debug("test allocating the rest of the free list");
-  b2 = alloc_group(NUM_USABLE_BLOCKS - 1);
+  b2 = alloc_group(1);
   verify_free_block_list();
   verify_free_megablock_list();
   assert_free_block_list_empty(); // should be empty now
