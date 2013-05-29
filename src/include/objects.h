@@ -17,7 +17,7 @@
 
 typedef struct ObjDef_s {
   // Since an objdef is an obj, too:
-  ObjDef_t *def;
+  struct ObjDef_s *def;
   word type;
   // The number of entries in the Obj (if it's not an array type).
   word length;
@@ -30,6 +30,10 @@ typedef struct ObjDef_s {
 
 typedef struct Obj_s {
   ObjDef_t *def;
+	// Makes a linked list of remembered-set objects in a generation.  0
+	// marks not being in the remembered set, (void *)-1 marks the end
+	// of the linked list.
+	struct Obj_s *link;
   union {
     struct {
       word length;

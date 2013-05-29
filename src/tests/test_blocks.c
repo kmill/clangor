@@ -22,6 +22,26 @@ void TEST_SUCCEEDS test_constants(void) {
          "Blockinfos ovelap with blocks.");
 }
 
+void TEST_SUCCEEDS test_basic_allocation(void) {
+	printf("1\n");
+	Blockinfo_t *b = alloc_group(1);
+	printf("1.a\n");
+	verify_free_block_list();
+	free_group(b);
+	printf("1.b\n");
+	verify_free_block_list();
+	verify_free_megablock_list();
+	debug_print_free_megablock_list();
+	printf("2\n");
+	b = alloc_group(1);
+	verify_free_block_list();
+	debug_print_free_block_list();
+	printf("3\n");
+	b = alloc_group(1);
+	verify_free_block_list();
+	debug_print_free_block_list();
+}
+
 // Tests various orders of allocation and deallocation of two block
 // groups which make up a megablock.  Some of this is redundant.
 void TEST_SUCCEEDS test_allocation_deallocation(void) {
@@ -102,6 +122,7 @@ void TEST_SUCCEEDS test_big_allocation_deallocation(void) {
   for (int i = 1; i < 101; i++) {
     int j = 1 + 3*(i-1) % 100;
     b[j] = alloc_group(j);
+		assert(b[j]->start != NULL, "Block has bad start.");
     assert(b[j]->blocks == j, "Group not the right size.");
     verify_free_block_list();
     verify_free_megablock_list();
@@ -118,6 +139,7 @@ void TEST_SUCCEEDS test_big_allocation_deallocation(void) {
 // Can we write to a block which is given to us?
 void TEST_SUCCEEDS test_writing_to_block(void) {
   Blockinfo_t *b = alloc_group(5);
+	assert(b->start != NULL, "Block has null start.");
   assert(b->blocks == 5, "Block not the right size.");
   for (word i = 0; i < BLOCK_SIZE * b->blocks; i++) {
     *((uint8_t *)b->start + i) = 22;

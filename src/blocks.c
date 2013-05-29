@@ -105,7 +105,9 @@ Megablock_t *alloc_megablocks(word n_megablocks) {
 // Initialize the Blockinfo.start's of the megablock.
 static inline
 void init_megablock(Megablock_t *megablock) {
+	probe(megablock, "%p (init_megablock)");
   for (word i = FIRST_USABLE_BLOCK; i < NUM_BLOCKS; i++) {
+		//		printf("init_megablock %d %p\n", i, &megablock->blockinfos[i]);
     megablock->blockinfos[i].blockinfo.start = &megablock->blocks[i];
   }
 }
@@ -114,7 +116,7 @@ void init_megablock(Megablock_t *megablock) {
 // head of the group.
 static inline
 void fix_group_tail(Blockinfo_t *blockinfo) {
-  Blockinfo_t *tail = blockinfo + blockinfo->blocks - 1;
+  Blockinfo_t *tail = (Blockinfo_t *)((struct Blockinfo_aligned_s *)blockinfo + blockinfo->blocks - 1);
   if (tail != blockinfo) {
     tail->blocks = 0;
     tail->free_ptr = 0;
@@ -230,7 +232,7 @@ Blockinfo_t *split_free_group(Blockinfo_t *blockinfo, word blocks, word i) {
   // remove from free list since size is changing
   list_unlink_blockinfo(blockinfo, &free_block_list[i]);
   // Take the block off the end of this one.
-  Blockinfo_t *cut = blockinfo + blockinfo->blocks - blocks;
+  Blockinfo_t *cut = (Blockinfo_t *)((struct Blockinfo_aligned_s *)blockinfo + blockinfo->blocks - blocks);
   cut->blocks = blocks;
   blockinfo->blocks -= blocks;
   fix_group_tail(blockinfo);
@@ -267,14 +269,15 @@ Blockinfo_t *alloc_group(word blocks) {
       // Didn't find a free block.  Need to allocate a megablock.
       blockinfo = alloc_megagroup(1);
       blockinfo->blocks = blocks;
-      init_group(blockinfo);
-      Blockinfo_t *remainder = blockinfo + blocks; // assumes blockinfos are contiguous
+			//      init_group(blockinfo);
+      Blockinfo_t *remainder = (Blockinfo_t *)((struct Blockinfo_aligned_s *)blockinfo + blocks); // assumes blockinfos are contiguous
       remainder->blocks = NUM_USABLE_BLOCKS - blocks;
-      // init_group must happen before free_group(remainder) since
-      // blockinfo might get coalesced into remainder:
+      // init_group(blockinfo) must happen before free_group(remainder) since
+      // blockinfo would get coalesced into remainder:
       init_group(blockinfo);
       init_group(remainder); // to set up the free_ptr so free_group doesn't complain
       free_group(remainder);
+			assert(blockinfo->start != NULL, "Block start is not assigned");
       return blockinfo;
     } else {
       // Found one
@@ -282,14 +285,14 @@ Blockinfo_t *alloc_group(word blocks) {
       if (blockinfo->blocks == blocks) {
         // right size: don't need to split
         list_unlink_blockinfo(blockinfo, &free_block_list[i]);
-        init_group(blockinfo);
       } else {
         // else the block is too big
         assert(blockinfo->blocks > blocks, "Free list is corrupted.");
         blockinfo = split_free_group(blockinfo, blocks, i);
         assert(blockinfo->blocks == blocks, "Didn't split block properly.");
-        init_group(blockinfo);
       }
+			init_group(blockinfo);
+			assert(blockinfo->start != NULL, "Block start is not assigned");
       return blockinfo;
     }
   }
@@ -313,8 +316,8 @@ void free_group(Blockinfo_t *blockinfo) {
     // It's a sub-megagroup group
 
     // Coalesce forwards
-    if (blockinfo != LAST_BLOCKINFO(blockinfo)) {
-      Blockinfo_t *next = blockinfo + blockinfo->blocks;
+		Blockinfo_t *next = (Blockinfo_t *)((struct Blockinfo_aligned_s *)blockinfo + blockinfo->blocks);
+    if (next <= LAST_BLOCKINFO(blockinfo)) {
       if (next->free_ptr == (void *)-1) {
         blockinfo->blocks += next->blocks;
         word i = log2_floor(next->blocks);
@@ -332,7 +335,7 @@ void free_group(Blockinfo_t *blockinfo) {
 
     // Coalesce backwards
     if (blockinfo != FIRST_BLOCKINFO(blockinfo)) {
-      Blockinfo_t *prev = blockinfo - 1;
+      Blockinfo_t *prev = (Blockinfo_t *)((struct Blockinfo_aligned_s *)blockinfo - 1);
       if (prev->blocks == 0) {
         // get the head of this non-head block
         prev = prev->link;
@@ -360,6 +363,14 @@ void free_group(Blockinfo_t *blockinfo) {
 
 ////// Debugging routines
 
+// Basic data consistency checks on a megablock
+void verify_megablock(Blockinfo_t *megablock) {
+	for (int i = 0; i < NUM_USABLE_BLOCKS; i++) {
+		assert(((struct Blockinfo_aligned_s *)megablock + i)->blockinfo.start == &TO_MEGABLOCK(megablock)->blocks[i+FIRST_USABLE_BLOCK],
+					 "Blockinfos not initialized correctly for megablock.");
+	}
+}
+
 // Basic data consistency checks on free_megablock_list
 void verify_free_megablock_list(void) {
   Blockinfo_t *curr;
@@ -368,6 +379,7 @@ void verify_free_megablock_list(void) {
       assert(curr->start < curr->link->start, "Order invariant broken");
       assert((word)TO_MEGABLOCK(curr->link) - (word)TO_MEGABLOCK(curr) > curr->blocks * (word)BLOCK_SIZE,
              "Not enough distance between disconnected blocks.");
+			verify_megablock(curr);
     }
   }
 }
@@ -379,7 +391,7 @@ void verify_free_block_list(void) {
       assert(b->blocks >= (1 << i), "Not-big-enough group free list");
       assert(b->blocks < (1 << i + 1), "Too-big group in free list");
       assert(b->free_ptr == (void *)-1, "Not marked as free");
-      Blockinfo_t *tail = b + b->blocks - 1;
+      Blockinfo_t *tail = (Blockinfo_t *)((struct Blockinfo_aligned_s *)b + b->blocks - 1);
       if (tail != b) {
         assert(tail->blocks == 0, "Tail not marked as free");
         assert(tail->free_ptr == 0, "Tail not marked as free");

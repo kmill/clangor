@@ -45,6 +45,13 @@
     exit(22);                                                        \
   } while(0)
 
+// Like assert, but isn't disabled when DEBUG isn't defined
+#define guard(test, expectation) do {																		\
+    if (!(test)) {                                                      \
+      error("Error: %s is not true. %s", #test, expectation);						\
+    }                                                                   \
+  } while (0)
+
 // Next power of two.  This should only be for computations in the
 // pre-processor!
 #define _npo2_b2(x) ((x) | ((x) >> 1))

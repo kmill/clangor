@@ -54,12 +54,14 @@ build/tests/%.c: src/tests/%.c src/tests/make_test.sh
 build/tests/%.o: build/tests/%.c
 	$(call compile, $<, $@, -I .)
 
-TEST_MODULES=build/tests/test_test build/tests/test_blocks
+TEST_MODULES=build/tests/test_test build/tests/test_blocks build/tests/test_gc
 
 build/tests/test_test: build/tests/test_test.o
 
 build/tests/test_blocks: build/tests/test_blocks.o build/target/blocks.o
 	$(call autolink)
+
+build/tests/test_gc: build/tests/test_gc.o build/target/blocks.o build/target/gc.o
 
 build/tests/run_tests.sh: src/tests/run_tests.sh
 	mkdir -p $(dir $@)

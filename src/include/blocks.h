@@ -129,6 +129,7 @@ Blockinfo_t *get_blockinfo(void *ptr) {
 
 // Debug
 
+void verify_megablock(Blockinfo_t *megablock);
 void verify_free_megablock_list(void);
 void verify_free_block_list(void);
 void debug_print_free_megablock_list(void);
