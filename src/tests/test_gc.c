@@ -10,8 +10,9 @@
 
 // Empty test
 void TEST_SUCCEEDS test_alloc_obj(void) {
+	int generation_config[] = {0};
 	init_free_lists();
-	init_generations();
+	init_generations(generation_config);
 	init_nurseries(1);
 	Nursery_t *nursery = get_nursery(0);
 	Obj_t *o = alloc_obj(nursery, 5);
@@ -27,8 +28,9 @@ void TEST_SUCCEEDS test_alloc_obj(void) {
 }
 
 void TEST_FAILS test_alloc_a_lot(void) {
+	int generation_config[] = {0};
 	init_free_lists();
-	init_generations();
+	init_generations(generation_config);
 	init_nurseries(1);
 	Nursery_t *nursery = get_nursery(0);
 	word mem = 0;

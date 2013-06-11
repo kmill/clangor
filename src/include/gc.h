@@ -30,6 +30,8 @@ typedef struct Generation_s {
   Blockinfo_t *blocks; // blocks in this generation
   word n_blocks;
 	Blockinfo_t *large; // large objects, doubly linked
+	word n_large_blocks;
+	word n_max_blocks; // max blocks before gc
 	//  word n_words;
   Obj_t *remembered; // linked list of objects in the remembered set
   struct Generation_s *to_gen; // destination generation for live objects
@@ -45,9 +47,10 @@ typedef struct Nursery_s {
 
 // API
 
-void init_generations(void);
+void init_generations(int generation_config[]);
 void init_nurseries(int num_threads);
 Obj_t *alloc_obj(Nursery_t *nursery, word size);
+void garbage_collect(void);
 
 Nursery_t *get_nursery(int i);
 

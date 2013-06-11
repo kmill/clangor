@@ -16,8 +16,9 @@
 #define OBJ_TYPE_ARRAY 2
 
 typedef struct ObjDef_s {
-  // Since an objdef is an obj, too:
+  // Since an objdef is an obj, too: (should be NULL)
   struct ObjDef_s *def;
+	struct Obj_s *link;
   word type;
   // The number of entries in the Obj (if it's not an array type).
   word length;
@@ -29,7 +30,7 @@ typedef struct ObjDef_s {
 } ObjDef_t;
 
 typedef struct Obj_s {
-  ObjDef_t *def;
+  ObjDef_t *def; // NULL marks that this is actually an ObjDef
 	// Makes a linked list of remembered-set objects in a generation.  0
 	// marks not being in the remembered set, (void *)-1 marks the end
 	// of the linked list.
